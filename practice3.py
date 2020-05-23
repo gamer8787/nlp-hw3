@@ -7,6 +7,10 @@ from nltk.stem import WordNetLemmatizer
 import nltk
 from nltk import word_tokenize
 from nltk.corpus import stopwords  
+import sys
+import io
+#sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding = 'utf-8')
+#sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = 'utf-8')
 lm = WordNetLemmatizer()    
 # Set of stopwords
 stop_words = set(stopwords.words('english'))
@@ -78,20 +82,55 @@ def is_heteronym(word):
     if(i>1) :
         return True
 
-    contents = soup.find_all("td",
-        {"class": "unicode audiolink"})         
-    if contents == None :
-        return False
-    for con in contents: 
-        if "Audio (US)" in str(con):
-            us=us+1
-        elif "Audio (UK)" in str(con):
-            uk=uk+1
-    if us+uk>1 :
+    contain = soup.find("div", {"class": "mw-parser-output"}) 
+    ul = contain.find_all("ul")
+    pronun = 0
+    for a in ul: 
+        if(a.find("li",{"class": "audiotable"}) != None ):
+            pronun +=1
+    if(pronun >1):
+        #print("1")
         return True
-    else :
-        print(us, uk)
-        return False
+    pronun2 = 0
+    for a in ul:
+        li = a.find_all("li")
+        for b in li:
+            ul2 = b.find_all("ul")
+            for c in ul2:
+                li2 = c.find_all("li")
+                for d in li2:
+                    if(d.find("table",{"class": "audiotable"}) != None ):
+                        pronun2+=1
+    if(pronun2 >1):
+        #print("2")
+        return True
+    pronun3 = 0
+    NVA = 0
+    for d in contain.find_all("dt"):
+        if("noun" in str(d).lower() or "verb:" in str(d).lower() or "adjective:" in str(d).lower() or "adverb:" in str(d).lower()):
+            NVA+=1
+    for b in contain.find_all("b"):
+        if("noun" in str(b).lower() or "verb:" in str(b).lower() or "adjective:" in str(b).lower() or "adverb:" in str(b).lower()):
+            NVA+=1
+    for a in ul:
+        li = a.find_all("li")
+        for b in li:
+            if("noun" in str(b).lower() or "verb:" in str(b).lower() or "adjective:" in str(b).lower() or "adverb:" in str(b).lower()):
+                NVA+=1
+            if(b.find("table",{"class": "audiotable"}) != None ):
+                pronun3+=1
+    if(pronun3 >1 and NVA >1):
+        print("3")
+        print(pronun3, NVA)
+        return True
+    """
+    for a in ul:
+        li = a.find_all("li")
+        if(li== None) :
+            continue
+        for l in li:
+            print(str(l))"""
+    return False
 
 def num_homograph(sen):
     i=0
@@ -106,7 +145,6 @@ def tosen(sen):
     sen2=[a for (a,b) in sen]    #word extract
     sen3=' '.join(sen2)
     return sen3
-
 URL = "https://en.wiktionary.org/wiki/Category:English_heteronyms"
 html = get_html(URL)
 soup = BeautifulSoup(html, 'html.parser')
@@ -120,15 +158,15 @@ for k in b:
         wordlist.append(word)
 true=0
 false=0
-print("more", is_heteronym(["more", "VERB"]))
+print("adduct", is_heteronym(["adduct", "VERB"]))
+"""
 for word in wordlist:
     print(word, is_heteronym([word, "VERB"]))
     if(is_heteronym([word, "VERB"])):
         true=true+1
     else:
         false+=1
-print(true, false)
-
+print(true, false)"""
 
 """
 sentences = brown.tagged_sents(categories=brown.categories(), tagset='universal')
@@ -137,4 +175,5 @@ for sen in sentences[:100]:
     senlist.append([num_homograph(sen),tosen(sen)])
 senlist.sort(reverse=True) 
 print(senlist)"""
+
 #발음이 같으면 
