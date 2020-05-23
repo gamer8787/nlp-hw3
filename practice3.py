@@ -80,56 +80,52 @@ def is_heteronym(word):
         if "Pronunciation" in pronunciation:
             i=i+1
     if(i>1) :
+        print("in 1 true")
         return True
+    button = 0
+    contain = soup.find_all("td", {"class": "unicode audiolink"})
+    for a in contain:
+        if ("UK" in a.get_text() or "US" in a.get_text()):  # another langauge can
+            button+=1
+    print(button)
+    #button = len(header_row)
 
-    contain = soup.find("div", {"class": "mw-parser-output"}) 
-    ul = contain.find_all("ul")
-    pronun = 0
-    for a in ul: 
-        if(a.find("li",{"class": "audiotable"}) != None ):
-            pronun +=1
-    if(pronun >1):
-        #print("1")
+    header_row = soup.select('div.mw-parser-output > ul > li ')
+    count1=0
+
+    for a in header_row:     
+        text = a.get_text().lower().split("\n")
+        #print(text)
+        if( "noun" in text or "verb" in text or "adjective" in text or "adverb" in text 
+                    or "noun:" in text or "verb:" in text or "adjective:" in text or "adverb:" in text 
+                        or  "(noun):" in text or  "(verb):" in text or  "(adjective):" in text or  "(adverb):" in text  ):
+            count1+=1
+    print(button,count1)
+
+    header_row = soup.select('div.mw-parser-output > dl > dt ')
+    count2=0
+    for a in header_row:     
+        text = a.get_text().lower().split("\n")
+        #print(text)
+        if( "noun" in text or "verb" in text or "adjective" in text or "adverb" in text 
+                    or "noun:" in text or "verb:" in text or "adjective:" in text or "adverb:" in text 
+                        or  "(noun):" in text or  "(verb):" in text or  "(adjective):" in text or  "(adverb):" in text  ):
+            count2+=1
+    print(button,count2)
+
+    header_row = soup.select('div.mw-parser-output > p > b ')
+    count3=0
+    for a in header_row:     
+        text = a.get_text().lower().split("\n")
+        #print(text)
+        if( "noun" in text or "verb" in text or "adjective" in text or "adverb" in text 
+                    or "noun:" in text or "verb:" in text or "adjective:" in text or "adverb:" in text 
+                        or  "(noun):" in text or  "(verb):" in text or  "(adjective):" in text or  "(adverb):" in text  ):
+            count3+=1
+    print(button,count3)
+    if(button>1 and (count1>1 or count2>1 or count3>1)):
+        print("in second true")
         return True
-    pronun2 = 0
-    for a in ul:
-        li = a.find_all("li")
-        for b in li:
-            ul2 = b.find_all("ul")
-            for c in ul2:
-                li2 = c.find_all("li")
-                for d in li2:
-                    if(d.find("table",{"class": "audiotable"}) != None ):
-                        pronun2+=1
-    if(pronun2 >1):
-        #print("2")
-        return True
-    pronun3 = 0
-    NVA = 0
-    for d in contain.find_all("dt"):
-        if("noun" in str(d).lower() or "verb:" in str(d).lower() or "adjective:" in str(d).lower() or "adverb:" in str(d).lower()):
-            NVA+=1
-    for b in contain.find_all("b"):
-        if("noun" in str(b).lower() or "verb:" in str(b).lower() or "adjective:" in str(b).lower() or "adverb:" in str(b).lower()):
-            NVA+=1
-    for a in ul:
-        li = a.find_all("li")
-        for b in li:
-            if("noun" in str(b).lower() or "verb:" in str(b).lower() or "adjective:" in str(b).lower() or "adverb:" in str(b).lower()):
-                NVA+=1
-            if(b.find("table",{"class": "audiotable"}) != None ):
-                pronun3+=1
-    if(pronun3 >1 and NVA >1):
-        print("3")
-        print(pronun3, NVA)
-        return True
-    """
-    for a in ul:
-        li = a.find_all("li")
-        if(li== None) :
-            continue
-        for l in li:
-            print(str(l))"""
     return False
 
 def num_homograph(sen):
@@ -158,15 +154,15 @@ for k in b:
         wordlist.append(word)
 true=0
 false=0
-print("adduct", is_heteronym(["adduct", "VERB"]))
-"""
+print("abrogate", is_heteronym(["abrogate", "VERB"]))
+
 for word in wordlist:
     print(word, is_heteronym([word, "VERB"]))
     if(is_heteronym([word, "VERB"])):
         true=true+1
     else:
         false+=1
-print(true, false)"""
+print(true, false)
 
 """
 sentences = brown.tagged_sents(categories=brown.categories(), tagset='universal')
