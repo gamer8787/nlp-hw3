@@ -12,4 +12,5 @@ lm = WordNetLemmatizer()
 #sentences = brown.tagged_sents(categories=brown.categories(), tagset='universal')
 #print(len(sentences))
 #print(stopwords.words('english') )
-print("RoW:".lower())
+i=3*[0]
+print(i)

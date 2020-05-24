@@ -9,8 +9,8 @@ from nltk import word_tokenize
 from nltk.corpus import stopwords  
 import sys
 import io
-#sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding = 'utf-8')
-#sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = 'utf-8')
+sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding = 'utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = 'utf-8')
 lm = WordNetLemmatizer()    
 # Set of stopwords
 stop_words = set(stopwords.words('english'))
@@ -25,6 +25,7 @@ def get_html(url):
     else :
         return None 
     return _html
+"""
 def is_homograph(word):
     if (not word[1] in accept_list):
         return False
@@ -52,7 +53,7 @@ def is_homograph(word):
         return True
     else :
         return False
-
+"""
 def is_heteronym(word):
     if (not word[1] in accept_list):
         return False
@@ -60,10 +61,7 @@ def is_heteronym(word):
         print("stop")
         return False
     word=word[0]
-    i=0
-    us=0
-    uk=0
-
+    pro_contents=0 #number of pronunciation contents
     URL = "https://en.wiktionary.org/wiki/"+word.lower()
     html = get_html(URL)
     if(html == None):  
@@ -78,64 +76,60 @@ def is_heteronym(word):
         pp = p.find("a")
         pronunciation = pp["href"]
         if "Pronunciation" in pronunciation:
-            i=i+1
-    if(i>1) :
-        print("in 1 true")
-        return True
-    button = 0
-    contain = soup.find_all("td", {"class": "unicode audiolink"})
-    for a in contain:
-        if ("UK" in a.get_text() or "US" in a.get_text()):  # another langauge can
-            button+=1
-    print(button)
-    #button = len(header_row)
+            pro_contents=pro_contents+1 #number of pronunciation contents
 
-    header_row = soup.select('div.mw-parser-output > ul > li ')
-    count1=0
+    contain = soup.find("div", {"class" : "mw-parser-output"})
+    h3_line=contain.select("h3")
+    pro_line_index = pro_contents *[0]
+    pro_con=0
+    for i,a in enumerate(h3_line):
+        if "pronunciation" in a.text.lower():
+            pro_line_index[pro_con] = i
+            pro_con+=1
+        if(pro_con ==pro_contents ):
+            break
+    #pro_line = contain.select("h3")[pro_line_index]
+    #next_pro_line = contain.select("h3")[pro_line_index+1]
 
-    for a in header_row:     
-        text = a.get_text().lower().split("\n")
-        #print(text)
-        if( "noun" in text or "verb" in text or "adjective" in text or "adverb" in text 
-                    or "noun:" in text or "verb:" in text or "adjective:" in text or "adverb:" in text 
-                        or  "(noun):" in text or  "(verb):" in text or  "(adjective):" in text or  "(adverb):" in text  ):
-            count1+=1
-    print(button,count1)
+    want_tuple=[]
+    line_list=[]
+    for i in range(pro_contents):
+        pro_line = contain.select("h3")[pro_line_index[i]]
+        next_pro_line = contain.select("h3")[pro_line_index[i]+1]
+        for d in contain:
+            try:
+                index = contain.index(d)
+            except:
+                continue
+            if( contain.index(pro_line) < index < contain.index(next_pro_line)):
+                try: 
+                    for line in d.text.split("\n"):
+                        line_list.append(line)
+                except:
+                    continue
+    #print(line_list)
+    for index in range(len(line_list)-1):
+        if(("IPA(key)" not in line_list[index] and "Rhymes" not in line_list[index] and "UK" not in line_list[index])
+                    and "IPA(key)" in line_list[index+1]):
+            want_tuple.append([line_list[index], line_list[index+1]])
+    print(want_tuple)
+    #print(contain.index(pro_line),pro_line.text)
+    #print(contain.index(next_pro_line))
+    #ul=soup.select("div.mw-parser-output >ul")[2]
+    #print(contain.index(ul), ul.text)
+    
 
-    header_row = soup.select('div.mw-parser-output > dl > dt ')
-    count2=0
-    for a in header_row:     
-        text = a.get_text().lower().split("\n")
-        #print(text)
-        if( "noun" in text or "verb" in text or "adjective" in text or "adverb" in text 
-                    or "noun:" in text or "verb:" in text or "adjective:" in text or "adverb:" in text 
-                        or  "(noun):" in text or  "(verb):" in text or  "(adjective):" in text or  "(adverb):" in text  ):
-            count2+=1
-    print(button,count2)
 
-    header_row = soup.select('div.mw-parser-output > p > b ')
-    count3=0
-    for a in header_row:     
-        text = a.get_text().lower().split("\n")
-        #print(text)
-        if( "noun" in text or "verb" in text or "adjective" in text or "adverb" in text 
-                    or "noun:" in text or "verb:" in text or "adjective:" in text or "adverb:" in text 
-                        or  "(noun):" in text or  "(verb):" in text or  "(adjective):" in text or  "(adverb):" in text  ):
-            count3+=1
-    print(button,count3)
-    if(button>1 and (count1>1 or count2>1 or count3>1)):
-        print("in second true")
-        return True
     return False
 
 def num_homograph(sen):
     i=0
-    homolist=[]
+    hetelist=[]
     for word in sen:
-        if is_homograph(word):
+        if is_heteronym(word):
             i=i+1
-            homolist.append(word)
-    return (i,homolist)
+            hetelist.append(word)
+    return (i,hetelist)
 
 def tosen(sen):
     sen2=[a for (a,b) in sen]    #word extract
@@ -144,9 +138,11 @@ def tosen(sen):
 URL = "https://en.wiktionary.org/wiki/Category:English_heteronyms"
 html = get_html(URL)
 soup = BeautifulSoup(html, 'html.parser')
+
 a = soup.find("div", {"class": "mw-category"}) 
 b = a.find_all("li") 
 wordlist=[]
+
 for k in b:
     c = k.find("a")
     word = c["title"]
@@ -154,15 +150,15 @@ for k in b:
         wordlist.append(word)
 true=0
 false=0
-print("abrogate", is_heteronym(["abrogate", "VERB"]))
-
+print("contrast", is_heteronym(["contrast", "VERB"]))
+"""
 for word in wordlist:
     print(word, is_heteronym([word, "VERB"]))
     if(is_heteronym([word, "VERB"])):
         true=true+1
     else:
         false+=1
-print(true, false)
+print(true, false)"""
 
 """
 sentences = brown.tagged_sents(categories=brown.categories(), tagset='universal')
