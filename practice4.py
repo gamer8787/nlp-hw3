@@ -9,8 +9,6 @@ from nltk import word_tokenize
 from nltk.corpus import stopwords  
 lm = WordNetLemmatizer()    
 #f = open("CS372_HW3_output_20160638.csv", "w")
-#sentences = brown.tagged_sents(categories=brown.categories(), tagset='universal')
-#print(len(sentences))
+sentences = brown.tagged_sents(categories=brown.categories(), tagset='universal')
+print(sentences[0])
 #print(stopwords.words('english') )
-i=3*[0]
-print(i)

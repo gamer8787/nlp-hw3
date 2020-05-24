@@ -9,11 +9,12 @@ from nltk import word_tokenize
 from nltk.corpus import stopwords  
 import sys
 import io
-#sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding = 'utf-8')
-#sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = 'utf-8')
+sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding = 'utf-8')
+sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = 'utf-8')
 lm = WordNetLemmatizer()    
 # Set of stopwords
 stop_words = set(stopwords.words('english'))
+stop_words |= set(['.', ',', '\'s', 'n\'t', '(', ')', "''", "would", "done"]) # refer to the wikitionay 'done' can be a slang also, but except
 #f = open("CS372_HW3_output_20160638.csv", "w")
 accept_list = ["ADJ", "ADV", "NOUN", "VERB"]
 def get_html(url):
@@ -30,7 +31,7 @@ def is_heteronym(word):
     if (not word[1] in accept_list):
         return False
     if (word[0] in stop_words):
-        print("stop")
+        #print("stop")
         return False
     word=word[0]
     pro_contents=0 #number of pronunciation contents
@@ -39,9 +40,11 @@ def is_heteronym(word):
     if(html == None):  
         return False
     soup = BeautifulSoup(html, 'html.parser')
-
+    print(word)
     pronun = soup.find("li",
         {"class": "toclevel-1 tocsection-1"}) 
+    if(pronun==None):
+        return False
     pro = pronun.find_all("li")
 
     for p in pro:
@@ -51,7 +54,7 @@ def is_heteronym(word):
             pro_contents=pro_contents+1 #number of pronunciation contents
     
     contain = soup.find("div", {"class" : "mw-parser-output"})
-    
+    want_tuple=[]
     if(pro_contents == 1):
         h3_line=contain.select("h3")
         pro_line_index = 0
@@ -77,10 +80,11 @@ def is_heteronym(word):
                     continue
         #print(line_list)
         for index in range(len(line_list)-1):
-            if(("IPA(key)" not in line_list[index] and "Rhymes" not in line_list[index] 
+            if(("IPA(key)" not in line_list[index] and "Rhymes" not in line_list[index] and "Audio" not in line_list[index]
                 and "UK" not in line_list[index] and "US" not in line_list[index])
                         and "IPA(key)" in line_list[index+1]):
                 want_tuple.append([line_list[index], line_list[index+1]])
+                print("1")
                 continue
             split=line_list[index].split(" ")
             try:
@@ -96,6 +100,7 @@ def is_heteronym(word):
                         b=True 
                         break    
                 if(a and b):
+                    print("2")
                     want_tuple.append([line_list[index]])
             except:
                 continue
@@ -147,7 +152,7 @@ def is_heteronym(word):
         
         proindex=1
         for index in range(len(line_list)-1):
-            if(("IPA(key)" not in line_list[index] and "Rhymes" not in line_list[index] 
+            if(("IPA(key)" not in line_list[index] and "Rhymes" not in line_list[index] and "Audio" not in line_list[index]
                     and "UK" not in line_list[index] and "US" not in line_list[index] and "Pronunciation" in line_list[index])
                         and "IPA(key)" in line_list[index+1]):
                 want_tuple.append(["pronunciaiton"+str(proindex), line_list[index+1]])
@@ -159,7 +164,8 @@ def is_heteronym(word):
                 want_tuple.append([line_list[index], line_list[index+1]])
                 continue
             try:
-                if(("IPA(key)" not in line_list[index] and "Rhymes" not in line_list[index] and "UK" not in line_list[index] and "Pronunciation" in line_list[index])
+                if(("IPA(key)" not in line_list[index] and "Rhymes" not in line_list[index] and "Audio" not in line_list[index]
+                        and "UK" not in line_list[index] and "US" not in line_list[index] and "Pronunciation" in line_list[index])
                             and "IPA(key)" in line_list[index+2]): 
                     want_tuple.append(["pronunciaiton"+str(proindex), line_list[index+2]])
                     proindex+=1
@@ -196,19 +202,19 @@ def is_heteronym(word):
                             continue
             #print(line_list)                     
             for index in range(len(line_list)-1):
-                if(("IPA(key)" not in line_list[index] and "Rhymes" not in line_list[index] 
+                if(("IPA(key)" not in line_list[index] and "Rhymes" not in line_list[index] and "Audio" not in line_list[index]
                     and "UK" not in line_list[index] and "US" not in line_list[index] and "Pronunciation" in line_list[index])
                             and "IPA(key)" in line_list[index+1]):        
                     want_tuple.append(["pronunciaiton"+str(proindex), line_list[index+1]])
                     proindex+=1
                     continue
-                if(("IPA(key)" not in line_list[index] and "Rhymes" not in line_list[index] 
+                if(("IPA(key)" not in line_list[index] and "Rhymes" not in line_list[index] and "Audio" not in line_list[index]
                     and "UK" not in line_list[index] and "US" not in line_list[index])
                         and "IPA(key)" in line_list[index+1]):
                     want_tuple.append([line_list[index], line_list[index+1]])
                     continue
             
-    #print((want_tuple))
+    print((want_tuple))
     if(len(want_tuple)>1):
         return True
         #return (True,want_tuple)
@@ -227,6 +233,12 @@ def tosen(sen):
     sen2=[a for (a,b) in sen]    #word extract
     sen3=' '.join(sen2)
     return sen3
+
+
+print("abject", is_heteronym(["abject", "VERB"]))
+
+#test for real heteronym
+"""
 URL = "https://en.wiktionary.org/wiki/Category:English_heteronyms"
 html = get_html(URL)
 soup = BeautifulSoup(html, 'html.parser')
@@ -241,8 +253,6 @@ for k in b:
     if(word[0].islower() and word not in stop_words):
         wordlist.append(word)
 
-print("hello", is_heteronym(["hello", "VERB"]))
-""" #test for real heteronym
 true=0
 false=0
 for word in wordlist:
@@ -252,13 +262,13 @@ for word in wordlist:
     else:
         false+=1
 print(true, false)"""
-
-
+"""
 sentences = brown.tagged_sents(categories=brown.categories(), tagset='universal')
 senlist = []
-for sen in sentences[:5]:
+for i, sen in enumerate(sentences[100:200]):
     senlist.append([num_heteronym(sen),tosen(sen)])
+    print(i)
 senlist.sort(reverse=True) 
-print(senlist)
+print(senlist)"""
 
 #발음이 같으면 
